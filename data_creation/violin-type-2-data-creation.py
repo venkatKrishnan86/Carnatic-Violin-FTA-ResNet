@@ -89,7 +89,7 @@ if __name__ == "__main__":
     actualDirectoryForCarnatic = args.actual_directory_location
 
     _, pallavi_start_main, violin_alap_start_main = createSectionsDict(saragaDirectory)
-    data_folder = './data/violin_solo_dataset'
+    data_folder = '../data/violin_solo_dataset'
     if(not(os.path.isdir(data_folder))):
         os.mkdir(data_folder)
     writeSolos(actualDirectoryForCarnatic, data_folder, pallavi_start_main, violin_alap_start_main)
