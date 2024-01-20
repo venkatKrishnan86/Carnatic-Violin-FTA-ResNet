@@ -1,6 +1,4 @@
-import copy
 import sys
-import time
 import argparse
 import librosa
 import numpy as np
@@ -9,8 +7,6 @@ from tqdm import tqdm
 from scipy.io import wavfile
 
 import torch
-from torch import nn
-from torch.utils.data import DataLoader
 from utils import *
 
 sys.path.append('./FTANet-melodic/')
@@ -48,35 +44,50 @@ length = len(audio)//hop_len
 print("STEP 1/3: Predicting Pitch...")
 
 with torch.no_grad():
-    prediction_pitch = torch.zeros((321, (length//time_frame + 1)*time_frame)).to(device)
+    prediction_pitch = torch.zeros(321, length).to(device)
     for i in tqdm(range(0, length, time_frame)):
-        W, Cen_freq, _ = cfp.cfp_process(y=audio[i*hop_len:(i+time_frame)*hop_len+hop_len//2], sr = sr, hop = hop_len)
+        W, Cen_freq, _ = cfp.cfp_process(y=audio[i*hop_len:(i+time_frame)*hop_len+1], sr = sr, hop = hop_len)
+        value = W.shape[-1]
         W = np.concatenate((W, np.zeros((3, 320, 128 - W.shape[-1]))), axis=-1) # Padding
         W_norm = gn.std_normalize(W)
-        # W_norm = gn.std_normalize(W[:,:,i:i+time_frame])
         w = np.stack((W_norm, W_norm))
-        prediction_pitch[:, i:i+time_frame] = ftanet(torch.Tensor(w).to(device))[0][0][0]
-        # count+=1
+        prediction_pitch[:, i:i+value] = ftanet(torch.Tensor(w).to(device))[0][0][0][:, :value]
 
 print("Done!")
 print("STEP 2/3: Converting values to Hz...")
-y_hat = est(prediction_pitch.to('cpu'), Cen_freq, torch.linspace(hop_len/sr, hop_len/sr*((length//time_frame)*time_frame), ((length//time_frame)*time_frame)))
+
+frame_time = hop_len/sr
+
+y_hat = est(
+    prediction_pitch.to('cpu'), 
+    Cen_freq, 
+    torch.linspace(
+        frame_time, 
+        frame_time*((length//time_frame)*time_frame), 
+        ((length//time_frame)*time_frame)
+    )
+)
 
 print("Done!")
 print("STEP 3/3: Post processing pitch...")
 pitch_proc = PitchProcessor()
 
 pitch_values = y_hat[:,1]
-# Interpolate gaps shorter than 250ms (Gulati et al, 2016)
-pitch_values = pitch_proc.interpolate_below_length(
+pitch_values = pitch_proc.interpolate_below_length(         # Interpolate gaps shorter than 250ms (Gulati et al, 2016)
     arr=pitch_values,
     val=0.0,
 )
-# Smooth pitch track a bit
-pitch_values = pitch_proc.smoothing(pitch_values, sigma=1)
+pitch_values = pitch_proc.smoothing(pitch_values, sigma=1)  # Smooth pitch track a bit
 
 print("Done!")
 print("Writing files...")
+
+if not os.path.isdir("./result"):
+    os.mkdir("./result")
+if not os.path.isdir("./result/plots"):
+    os.mkdir("./result/plots")
+if not os.path.isdir("./result/resynthesized_audios"):
+    os.mkdir("./result/resynthesized_audios")
 
 plt.figure(figsize=(60,15))
 plt.plot(y_hat[:,0], pitch_values)
@@ -85,17 +96,16 @@ plt.xlabel("Time (s)")
 plt.ylabel("Frequency (Hz)")
 plt.xlim(left = 0)
 plt.ylim(bottom = 0)
-plt.savefig('plots_and_audios/'+loc[-slash : -dot-1]+" sine_wave_plot.png")
+plt.savefig('./result/plots/'+loc[-slash : -dot-1]+"_plot.png")
 
 rms_en_pitch = rms_energy(audio, frame_length = 2048, hop_length = hop_len)
-output = sinewaveSynth(freqs = np.array(pitch_values[:60*sr//hop_len]), amp = 0.1*np.ones_like(np.array(pitch_values[:60*sr//hop_len])), H = hop_len, fs = sample_rate)
+output = sinewaveSynth(freqs = np.array(pitch_values), amp = 0.02*np.ones_like(np.array(pitch_values)), H = hop_len, fs = sample_rate)
 output = lowpass_filter(output, cutoff = 1250, fs = sample_rate)
 
 output = output/np.max(output)
 output = np.nan_to_num(output)
-wavfile.write("plots_and_audios/"+loc[-slash : -dot-1]+" sine_wave_violin.wav", sample_rate, output)
+output = np.concatenate((output, np.zeros(audio.shape[-1] - output.shape[-1])), axis=-1) # Padding)
 
-# output += mul_audio*120
-# output = output/np.max(output)
-# output = np.nan_to_num(output)
-# wavfile.write("plots_and_audios/"+loc[-slash : -dot-1]+" sine_wave_violin+orig.wav", sample_rate, output)
+wavfile.write("result/resynthesized_audios/"+loc[-slash : -dot-1]+"_violin.wav", sample_rate, output)
+
+print("Done! Check results folder for plots and resynthesized audios")
