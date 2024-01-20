@@ -65,6 +65,7 @@ def writeSolos(
                 continue
             for multitracks in os.scandir(songs.path):     
                 if(multitracks.name.endswith('.multitrack-violin.mp3')):
+                    print(multitracks.path)
                     audio_data = AudioSegment.from_file(multitracks.path, "mp3")
                     cut_point1 = violin_alap_start_main[concerts.name][songs.name] * 1000 # ms
                     cut_point2 = pallavi_start_main[concerts.name][songs.name] * 1000 # ms
@@ -77,16 +78,20 @@ def writeSolos(
                         data_num+=1
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
                     prog='Violin Type-1 Data Creation',
                     description='Creates a .pt file storing all violin audios as torch Tensors in a list as a .pt file')
 
-    parser.add_argument('--saraga_directory_location')
-    parser.add_argument('--actual_directory_location')
+    parser.add_argument('saraga_directory_location')
+    parser.add_argument('actual_directory_location')
     args = parser.parse_args()
     saragaDirectory = args.saraga_directory_location
     actualDirectoryForCarnatic = args.actual_directory_location
+
+    if not actualDirectoryForCarnatic.endswith("/"):
+        actualDirectoryForCarnatic+="/"
+    if not saragaDirectory.endswith("/"):
+        saragaDirectory+="/"
 
     _, pallavi_start_main, violin_alap_start_main = createSectionsDict(saragaDirectory)
     data_folder = '../data/violin_solo_dataset'
