@@ -3,15 +3,17 @@ import sys
 import time
 import argparse
 import librosa
+import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from scipy.io import wavfile
 
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from utils import *
 
-sys.path.append('FTANet-melodic/')
+sys.path.append('./FTANet-melodic/')
 from network.ftanet_pytorch import FTAnet
 
 if torch.cuda.is_available():
@@ -24,7 +26,7 @@ else:
 print("DEVICE used: "+str(device))
 
 ftanet = FTAnet().to(device)
-ftanet.load_state_dict(torch.load('./Carnatic Violin Models/FTA-ResNet_best_version.pth'))
+ftanet.load_state_dict(torch.load('./models/FTA-ResNet_best_version.pth'))
 # ftanet.load_state_dict(torch.load('/Users/venkatakrishnanvk/FtaResNet_tanpura.pth'))
 ftanet.eval()
 
@@ -37,24 +39,16 @@ parser.add_argument('location', help = 'Location of the mp3 or wav audio file')
 args = parser.parse_args()
 loc = args.location
 
-# loc = '../../Datasets/carnatic/Sumitra Vasudev at Arkay by Sumithra Vasudev/Vanajaksha Ninne Kori/Vanajaksha Ninne Kori.mp3.mp3'
-# mul_loc = '../../Datasets/carnatic/Sumitra Vasudev at Arkay by Sumithra Vasudev/Vanajaksha Ninne Kori/Vanajaksha Ninne Kori.multitrack-vocal.mp3'
 dot = loc[::-1].index('.')
 slash = loc[::-1].index('/')
 audio, sample_rate = librosa.load(loc, sr = sr)
-# mul_audio, _ = librosa.load(mul_loc, sr = sr)
-# audio = audio[:60*sr]
-# mul_audio = mul_audio[47*sr:77*sr]
 
 length = len(audio)//hop_len
 
 print("STEP 1/3: Predicting Pitch...")
 
 with torch.no_grad():
-    # ftanet.to('cpu')
-    # count = 0
     prediction_pitch = torch.zeros((321, (length//time_frame + 1)*time_frame)).to(device)
-    # W, Cen_freq, _ = cfp.cfp_process(y=audio, sr = sr, hop = hop_len)
     for i in tqdm(range(0, length, time_frame)):
         W, Cen_freq, _ = cfp.cfp_process(y=audio[i*hop_len:(i+time_frame)*hop_len+hop_len//2], sr = sr, hop = hop_len)
         W = np.concatenate((W, np.zeros((3, 320, 128 - W.shape[-1]))), axis=-1) # Padding
