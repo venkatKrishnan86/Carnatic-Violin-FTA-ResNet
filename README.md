@@ -14,4 +14,4 @@ Follow these steps to use this model for your research purposes -
 python inference.py "path_to_wav_or_mp3_file"
  ```
 
-The code shall create plots and resynthesized audio files in the `results` folder
+The code shall create pitch and resynthesized audio files in the `results` folder, inside the folder with the same name as that of the wav/mp3 file.
