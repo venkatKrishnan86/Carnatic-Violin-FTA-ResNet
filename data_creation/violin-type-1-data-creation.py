@@ -5,7 +5,7 @@ import argparse
 
 parser = argparse.ArgumentParser(
                     prog='Violin Type-1 Data Creation',
-                    description='Creates a .pt file storing all violin audios as torch Tensors in a list')
+                    description='Creates a .pt file storing all violin audios as torch Tensors in a list as a .pt file')
 
 parser.add_argument('--location')
 args = parser.parse_args()
