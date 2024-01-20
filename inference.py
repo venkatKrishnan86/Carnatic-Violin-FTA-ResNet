@@ -87,15 +87,6 @@ if not os.path.isdir("./result"):
 if not os.path.isdir("./result/"+loc[-slash : -dot-1]):
     os.mkdir("./result/"+loc[-slash : -dot-1])
 
-plt.figure(figsize=(60,15))
-plt.plot(y_hat[:,0], pitch_values)
-plt.title(loc[-slash : -dot-1])
-plt.xlabel("Time (s)")
-plt.ylabel("Frequency (Hz)")
-plt.xlim(left = 0)
-plt.ylim(bottom = 0)
-plt.savefig(fname = "./result/'+loc[-slash : -dot-1]+'/plot.png")
-
 rms_en_pitch = rms_energy(audio, frame_length = 2048, hop_length = hop_len)
 output = sinewaveSynth(freqs = np.array(pitch_values), amp = 0.02*np.ones_like(np.array(pitch_values)), H = hop_len, fs = sample_rate)
 output = lowpass_filter(output, cutoff = 1250, fs = sample_rate)
@@ -108,4 +99,4 @@ wavfile.write("result/"+loc[-slash : -dot-1]+"/violin.wav", sample_rate, output)
 
 np.savetxt("result/"+loc[-slash : -dot-1]+"/pitch.txt", np.stack([y_hat[:,0], pitch_values], axis = -1))
 
-print("Done! Check the "+loc[-slash : -dot-1]+" folder inside results folder for plots, pitches and resynthesized audios")
+print("Done! Check the "+loc[-slash : -dot-1]+" folder inside results folder for pitches and resynthesized audios")
