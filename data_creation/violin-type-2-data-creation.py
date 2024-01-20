@@ -82,8 +82,8 @@ if __name__ == "__main__":
                     prog='Violin Type-1 Data Creation',
                     description='Creates a .pt file storing all violin audios as torch Tensors in a list as a .pt file')
 
-    parser.add_argument('saraga_directory_location')
-    parser.add_argument('actual_directory_location')
+    parser.add_argument('saraga_directory_location') # ../../saraga/dataset/carnatic
+    parser.add_argument('actual_directory_location') # ../../Datasets/carnatic
     args = parser.parse_args()
     saragaDirectory = args.saraga_directory_location
     actualDirectoryForCarnatic = args.actual_directory_location
