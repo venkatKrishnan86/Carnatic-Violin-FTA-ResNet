@@ -84,8 +84,8 @@ print("Writing files...")
 
 if not os.path.isdir("./result"):
     os.mkdir("./result")
-if not os.path.isdir("./result/"+loc[-slash : -dot-1]):
-    os.mkdir("./result/"+loc[-slash : -dot-1])
+if not os.path.isdir("./result/FTA-Net-Violin-"+loc[-slash : -dot-1]):
+    os.mkdir("./result/FTA-Net-Violin-"+loc[-slash : -dot-1])
 
 plt.figure(figsize=(60,15))
 plt.plot(y_hat[:,0], pitch_values)
